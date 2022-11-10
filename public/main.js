@@ -24,14 +24,17 @@ function sendNewMessage(){
 function updateMessages(data){
     let messagesToHtml = ''
     data.forEach(i => {
-        messagesToHtml = messagesToHtml + `<li><b>${i.username}:</b> <i>${i.message}</i></li>`
+        messagesToHtml = messagesToHtml + `<li><b class="text-primary fs-bold">${i.username}: </b><b class="text-warning">${Date()}</b>: <i class="text-success">${i.message}</i></li>`
     })
     document.querySelector('#messagesList').innerHTML = messagesToHtml;
 }
 
+
+
 socket.on('UPDATE_DATA', (data) => {
     messages = data
     updateMessages(data)
+    console.log(data)
 });
 
 socket.on('NEW_MESSAGE_FROM_SERVER', (data) => {
