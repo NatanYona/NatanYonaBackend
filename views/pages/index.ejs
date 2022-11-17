@@ -33,14 +33,16 @@
                         <th scope="col">Nombre</th>
                         <th scope="col">Precio</th>
                         <th scope="col">thumbnail</th>
+                        <th scope="col">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     <% productos.forEach(i => { %> 
                     <tr>
-                        <td><%=i.name %> </td>
+                        <td><a href="/productos/<%=i.id %>"><%=i.name %></a></td>
                         <td><%=i.price %> </td>
                         <td><%=i.thumbnail %> </td>
+                        <td><a href="/productos/<%=i.id %>"><button type="button" class="btn btn-danger">Borrar</button></a></td>
                     </tr>
                     <% }) %> 
                 </tbody>
