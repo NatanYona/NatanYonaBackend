@@ -3,6 +3,7 @@ const {Server: HttpServer} = require('http');
 const {Server: IoServer} = require('socket.io');
 const Productos = require('./src/services/productos.services');
 const Cart = require('./src/services/cart.services');
+const { default: knex } = require('knex');
 require('dotenv').config();
 
 const messages = [];

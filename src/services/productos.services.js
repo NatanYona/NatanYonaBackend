@@ -1,16 +1,7 @@
-const fs = require ('fs');
+const knexConfig = require('./database/config.js');
+const knex = require('knex')(knexConfig);
 
-
-
-let productos = [];
-try {
-    const data = fs.readFileSync('./productos.txt', 'utf-8');
-    if(data != ''){
-        productos = JSON.parse(data);
-    }
-} catch (err) {
-    console.error(err)
-}
+const productos = []
 
 class Productos{
     constructor(){}
@@ -21,17 +12,15 @@ class Productos{
 
     saveProductos(producto){
         productos.push(producto)
-        fs.writeFileSync('./productos.txt', JSON.stringify(productos))
-        return producto
-    }
-    deleteProductos(id){
-        const producto = productos.find(i => i.id == id)
-        productos.splice(producto, 1)
-        fs.writeFileSync('./productos.txt', JSON.stringify(productos))
+        knex('products').insert(producto).then(()=> {
+            console.info('product saved')
+        }).catch(err =>{
+            console.error(err)
+        }).finally(() =>{
+            knex.destroy();
+        });
         return producto
     }
 }
-
-
 
 module.exports = Productos
