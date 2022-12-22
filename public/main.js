@@ -31,7 +31,7 @@ function sendNewMessage(){
 function updateMessages(data){
     let messagesToHtml = ''
     data.forEach(i => {
-        messagesToHtml = messagesToHtml + `<li><b class="text-primary fs-bold">${i.author.name}: </b><b class="text-warning">${Date()}</b>: <i class="text-success">${i.text}</i></li>`
+        messagesToHtml = messagesToHtml + `<li><b class="text-primary fs-bold">${i.author.username}: </b><b class="text-warning">${Date()}</b>: <i class="text-success">${i.text}</i></li>`
     })
     document.querySelector('#messagesList').innerHTML = messagesToHtml;
 }
