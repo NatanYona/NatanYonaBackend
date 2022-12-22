@@ -3,6 +3,8 @@ const {Server: HttpServer} = require('http');
 const {Server: IoServer} = require('socket.io');
 const Productos = require('./src/services/productos.services');
 const Cart = require('./src/services/cart.services');
+const ChatLog = require('./src/services/chatlog.services');
+const { default: knex } = require('knex');
 require('dotenv').config();
 
 const messages = [];
@@ -48,6 +50,14 @@ app.get('/productos', (_req, res) => {
 })
 
 
+
+app.get('/api/productos-test', (_req, res)=>{
+    const productos = new Productos()
+    res.status(200).json({
+        productos: productos.generateProductos()
+    })
+})
+
 //post
 app.post('/productos' , (req, res)=>{
     const {name, price, thumbnail} = req.body;
@@ -90,6 +100,8 @@ app.get('/productos/:id', (req, res)=>{
         })
     }
 })
+
+
 //put
 app.put('/productos/:id', (req, res)=>{
     try{
@@ -193,10 +205,6 @@ app.delete('/cart/productos/:id', (req, res)=>{
         })
     }
 })
-
-
-
-
 
 
 //chat
