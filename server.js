@@ -1,10 +1,14 @@
 const express = require('express');
-const {Server: HttpServer} = require('http');
-const {Server: IoServer} = require('socket.io');
+const { Server: HttpServer } = require('http');
+const { Server: IoServer } = require('socket.io');
 const Productos = require('./src/services/productos.services');
 const Cart = require('./src/services/cart.services');
 const ChatLog = require('./src/services/chatlog.services');
 const { default: knex } = require('knex');
+const coockieParser = require('cookie-parser');
+const indexRouter = require('./src/router/index');
+const logger = require('morgan');
+const session = require('express-session');
 require('dotenv').config();
 
 const messages = [];
@@ -18,12 +22,33 @@ const io = new IoServer(http);
 app.use(express.static(__dirname + '/public'));
 
 app.use(express.json())
-app.use(express.urlencoded({extended: true}))
+app.use(express.urlencoded({ extended: true }))
+app.use(logger('tiny'))
 
 app.set('views', "./views")
 app.set('view engine', 'ejs')
 
-app.get('/health', (_req, res)=>{       
+const COOKIE_SECRET = process.env.COOKIE_SECRET;
+
+app.use(coockieParser(COOKIE_SECRET));
+
+
+
+
+app.use(session({
+    secret: COOKIE_SECRET,
+    resave: false,
+    saveUninitialized: true,
+}));
+
+app.use(indexRouter);
+
+
+//////end points
+
+
+
+app.get('/health', (_req, res) => {
     res.status(200).json({
         success: true,
         enviroment: process.env.ENVIRONMENT || "not found",
@@ -31,7 +56,7 @@ app.get('/health', (_req, res)=>{
     })
 })
 
-app.get('/ping', (_req, res)=>{
+app.get('/ping', (_req, res) => {
     res.status(200).json({
         ping: "PONG"
     })
@@ -40,18 +65,18 @@ app.get('/ping', (_req, res)=>{
 /// /Productos
 
 //get
-app.get('/productos', (_req, res)=>{
+app.get('/productos', (req, res) => {
     const productos = new Productos()
-    res.render('./pages/index', {productos: productos.getProductos()})
+    res.render('./pages/index', { productos: productos.getProductos() , user: req.session.username })
 })
 
 app.get('/productos', (_req, res) => {
-    res.sendFile('index', {root: __dirname});
+    res.sendFile('index', { root: __dirname });
 })
 
 
 
-app.get('/api/productos-test', (_req, res)=>{
+app.get('/api/productos-test', (_req, res) => {
     const productos = new Productos()
     res.status(200).json({
         productos: productos.generateProductos()
@@ -59,8 +84,8 @@ app.get('/api/productos-test', (_req, res)=>{
 })
 
 //post
-app.post('/productos' , (req, res)=>{
-    const {name, price, thumbnail} = req.body;
+app.post('/productos', (req, res) => {
+    const { name, price, thumbnail } = req.body;
     const productos = new Productos()
     const newID = productos.getProductos().length + 1;
     const producto = {
@@ -80,9 +105,9 @@ app.post('/productos' , (req, res)=>{
 // producto/id
 
 
-app.get('/productos/:id', (req, res)=>{
-    try{
-        const {id} = req.params;
+app.get('/productos/:id', (req, res) => {
+    try {
+        const { id } = req.params;
         const productos = new Productos()
         const producto = productos.getProductos().find(i => i.id == id)
         res.status(200).json({
@@ -94,7 +119,7 @@ app.get('/productos/:id', (req, res)=>{
             time: new Date(producto.time).toLocaleString(),
             desc: producto.desc
         })
-    }catch(err){
+    } catch (err) {
         res.status(404).json({
             error: err
         })
@@ -103,10 +128,10 @@ app.get('/productos/:id', (req, res)=>{
 
 
 //put
-app.put('/productos/:id', (req, res)=>{
-    try{
-        const {id} = req.params;
-        const {name, price, thumbnail} = req.body;
+app.put('/productos/:id', (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, price, thumbnail } = req.body;
         const productos = new Productos()
         const producto = productos.getProductos().find(i => i.id == id)
         producto.name = name;
@@ -121,7 +146,7 @@ app.put('/productos/:id', (req, res)=>{
             time: new Date(producto.time).toLocaleString(),
             desc: producto.desc
         })
-    }catch(err){
+    } catch (err) {
         res.status(404).json({
             error: err
         })
@@ -133,16 +158,16 @@ app.put('/productos/:id', (req, res)=>{
 
 // delete
 
-app.delete('/productos/:id', (req, res)=>{
-    try{
-        const {id} = req.params;
+app.delete('/productos/:id', (req, res) => {
+    try {
+        const { id } = req.params;
         const productos = new Productos()
         const producto = productos.getProductos().find(i => i.id == id)
         productos.deleteProductos(id)
         res.status(200).json({
             producto
         })
-    }catch(err){
+    } catch (err) {
         res.status(404).json({
             error: err
         })
@@ -152,7 +177,7 @@ app.delete('/productos/:id', (req, res)=>{
 //CART
 
 //get
-app.get('/cart/productos', (_req, res)=>{
+app.get('/cart/productos', (_req, res) => {
     const productos = new Cart()
     res.status(200).json({
         productos: productos.getCart()
@@ -161,8 +186,8 @@ app.get('/cart/productos', (_req, res)=>{
 )
 
 //post
-app.post('/cart/productos' , (req, res)=>{
-    const {name, price, thumbnail} = req.body;
+app.post('/cart/productos', (req, res) => {
+    const { name, price, thumbnail } = req.body;
     const productos = new Cart()
     const newID = productos.getCart().length + 1;
     const producto = {
@@ -181,7 +206,7 @@ app.post('/cart/productos' , (req, res)=>{
 })
 
 //delete 
-app.delete('/cart', (_req, res)=>{
+app.delete('/cart', (_req, res) => {
     const productos = new Cart()
     productos.deleteCart()
     res.status(200).json({
@@ -190,16 +215,16 @@ app.delete('/cart', (_req, res)=>{
 })
 
 
-app.delete('/cart/productos/:id', (req, res)=>{
-    try{
-        const {id} = req.params;
+app.delete('/cart/productos/:id', (req, res) => {
+    try {
+        const { id } = req.params;
         const productos = new Cart()
         const producto = productos.getCart().find(i => i.id == id)
         productos.deleteCart(id)
         res.status(200).json({
             producto
         })
-    }catch(err){
+    } catch (err) {
         res.status(404).json({
             error: err
         })
@@ -223,3 +248,14 @@ io.on('connection', (socket) => {
         io.sockets.emit('NEW_MESSAGE_FROM_SERVER', data);
     })
 })
+
+
+
+
+///users db
+
+
+
+
+
+module.exports = app
