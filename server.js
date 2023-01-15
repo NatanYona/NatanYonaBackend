@@ -9,14 +9,23 @@ const coockieParser = require('cookie-parser');
 const indexRouter = require('./src/router/index');
 const logger = require('morgan');
 const session = require('express-session');
+const twitterStrategy = require('passport-twitter').Strategy;
+const { getStorageConfig } = require('./src/services/session.services');
+const MongoStore = require('connect-mongo');
+const mongooseConect = require('./src/services/Mongo/connect');
+const passport = require('passport');
+const userModel = require('./src/services/Mongo//models/user.model');
+const md5 = require('md5');
 require('dotenv').config();
 
-const messages = [];
 
+const localStategy = require('passport-local').Strategy;
+
+
+const messages = [];
 const app = express();
 
 const http = new HttpServer(app);
-
 const io = new IoServer(http);
 
 app.use(express.static(__dirname + '/public'));
@@ -32,17 +41,70 @@ const COOKIE_SECRET = process.env.COOKIE_SECRET;
 
 app.use(coockieParser(COOKIE_SECRET));
 
-
-
-
 app.use(session({
     secret: COOKIE_SECRET,
-    resave: false,
+    resave: true,
     saveUninitialized: true,
+    cookie: {
+        httpOnly: false,
+        secure: false,
+    }
 }));
 
 app.use(indexRouter);
 
+
+passport.use(new twitterStrategy({
+    consumerKey: process.env.TWITTER_CONSUMER_KEY,
+    consumerSecret: process.env.TWITTER_CONSUMER_SECRET,
+    callbackURL: "http://localhost:3005/auth/twitter/callback"
+}, (accessToken, refreshToken, profile, done) => {
+    console.log(profile)
+    done(null, profile)
+}
+));
+
+
+
+
+passport.use('login', new localStategy(async (username, password, done) => {
+    const userData = await userModel.findOne({ username, password: md5(password) })
+    if (!userData) {
+        return done(null, false, { message: 'User not found' })
+    }
+    return done(null, userData)
+}))
+
+
+passport.use('singUp', new localStategy({ passReqToCallback: true }, async (req, username, password, done) => {
+    const userData = await userModel.findOne({ username, password: md5(password) })
+    if (userData) {
+        return done(null, false, { message: 'User allready exist' })
+    }
+    const stageUser = new userModel({
+        username,
+        password,
+        fullname: req.body.fullname
+    })
+    const newUser = await stageUser.save()
+    return done(null, newUser)
+}))
+
+passport.serializeUser((user, done) => {
+    done(null, user._id);
+})
+
+passport.deserializeUser(async (id, done) => {
+    const userData = await userModel.findById(id)
+    done(null, userData)
+})
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+
+
+/* mongooseConect(); */
 
 //////end points
 
@@ -67,7 +129,7 @@ app.get('/ping', (_req, res) => {
 //get
 app.get('/productos', (req, res) => {
     const productos = new Productos()
-    res.render('./pages/index', { productos: productos.getProductos() , user: req.session.username })
+    res.render('./pages/index', { productos: productos.getProductos(), user: req.session.username })
 })
 
 app.get('/productos', (_req, res) => {
