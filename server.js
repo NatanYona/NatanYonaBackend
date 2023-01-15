@@ -104,7 +104,7 @@ app.use(passport.session());
 
 
 
-/* mongooseConect(); */
+mongooseConect();
 
 //////end points
 
