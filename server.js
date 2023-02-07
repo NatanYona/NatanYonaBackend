@@ -28,7 +28,7 @@ const app = express();
 const http = new HttpServer(app);
 const io = new IoServer(http);
 
-app.use(express.static(__dirname + '/public'));
+/* app.use(express.static(__dirname + '/public')); */
 
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
@@ -312,12 +312,16 @@ app.delete('/cart/productos/:id', (req, res) => {
 })
 
 
+app.get('/data', (req, res) => {
+    res.send("server data port " + PORT  + "process " + process.pid)
+})
+
 //chat
 
 
-const PORT = process.env.PORT || 3000
+const PORT = parseInt(process.argv[2]) || 3000
 
-http.listen(PORT, () => console.info(`Server up and running on port ${PORT}`));
+http.listen(PORT, () => console.info(`Server up and running on port ${PORT} - process ${process.pid}`));
 
 io.on('connection', (socket) => {
     console.info('Nuevo cliente conectado')
