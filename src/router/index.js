@@ -7,6 +7,10 @@ const app = require('../../server');
 const passport = require('passport');
 const { config } = require('dotenv');
 
+
+
+
+
 router.get("/health", (_req, res) => {
     res.status(200).json({
         message: "Server is up and running",
@@ -21,7 +25,8 @@ router.get('/info', (_req, res) => {
         nodeVersion: process.version,
         TitulodelProceso: process.title,
         plataforma: process.platform,
-        MemoryUse: process.memoryUsage()
+        MemoryUse: process.memoryUsage(),
+        uptime: process.uptime(),
     })
 })
 
