@@ -3,27 +3,17 @@ const { Server: HttpServer } = require('http');
 const { Server: IoServer } = require('socket.io');
 const Productos = require('./src/services/productos.services');
 const Cart = require('./src/services/cart.services');
-const ChatLog = require('./src/services/chatlog.services');
-const { default: knex } = require('knex');
 const coockieParser = require('cookie-parser');
 const indexRouter = require('./src/router/index');
 const logger = require('morgan');
 const session = require('express-session');
-const twitterStrategy = require('passport-twitter').Strategy;
-const { getStorageConfig } = require('./src/services/session.services');
-const MongoStore = require('connect-mongo');
-const mongooseConect = require('./src/services/Mongo/connect');
-const passport = require('passport');
-const userModel = require('./src/services/Mongo//models/user.model');
-const md5 = require('md5');
+const emailjs = require('@emailjs/browser');
+const mongoose = require('mongoose');
 require('dotenv').config();
 const compression = require('compression');
 const log4js = require('log4js');
-const cluster = require('cluster');
-const numCPUs = require('os').cpus().length;
+const uuidv4 = require('uuid').v4;
 
-
-const localStategy = require('passport-local').Strategy;
 
 
 
@@ -74,57 +64,6 @@ app.use(session({
 app.use(indexRouter);
 
 
-passport.use(new twitterStrategy({
-    consumerKey: process.env.TWITTER_CONSUMER_KEY,
-    consumerSecret: process.env.TWITTER_CONSUMER_SECRET,
-    callbackURL: "http://localhost:3005/auth/twitter/callback"
-}, (accessToken, refreshToken, profile, done) => {
-    console.log(profile)
-    done(null, profile)
-}
-));
-
-
-
-
-passport.use('login', new localStategy(async (username, password, done) => {
-    const userData = await userModel.findOne({ username, password: md5(password) })
-    if (!userData) {
-        return done(null, false, { message: 'User not found' })
-    }
-    return done(null, userData)
-}))
-
-
-passport.use('singUp', new localStategy({ passReqToCallback: true }, async (req, username, password, done) => {
-    const userData = await userModel.findOne({ username, password: md5(password) })
-    if (userData) {
-        return done(null, false, { message: 'User allready exist' })
-    }
-    const stageUser = new userModel({
-        username,
-        password,
-        fullname: req.body.fullname
-    })
-    const newUser = await stageUser.save()
-    return done(null, newUser)
-}))
-
-passport.serializeUser((user, done) => {
-    done(null, user._id);
-})
-
-passport.deserializeUser(async (id, done) => {
-    const userData = await userModel.findById(id)
-    done(null, userData)
-})
-
-app.use(passport.initialize());
-app.use(passport.session());
-
-
-
-/* mongooseConect(); */
 
 //////end points
 
@@ -135,7 +74,7 @@ app.get('/api/randoms', (req, res) => {
     const max = 10000;
     const randoms = [];
     const cant = req.query.cant || 1;
-    for (let i = 0; i < cant ; i++) {
+    for (let i = 0; i < cant; i++) {
         randoms.push(Math.floor(Math.random() * (max - min) + min))
     }
     res.status(200).json({
@@ -334,8 +273,8 @@ app.delete('/cart/productos/:id', (req, res) => {
 const log = log4js.getLogger('server');
 
 app.get('/data', (_req, res) => {
-    log.info("server data port " + PORT  + "process " + process.pid)
-    res.send("server data port " + PORT  + "process " + process.pid)
+    log.info("server data port " + PORT + "process " + process.pid)
+    res.send("server data port " + PORT + "process " + process.pid)
 })
 
 
@@ -359,7 +298,84 @@ io.on('connection', (socket) => {
 
 
 
-///users db
+///connection to mongodb compass database
+mongoose.set('strictQuery', false);
+mongoose.connect('mongodb://localhost:27017/Users', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+    .then(() => console.log('DB Connected!'))
+    .catch(err => {
+        console.log(`DB Connection Error: ${ err.message }`);
+    });
+//user schema
+const userSchema = new mongoose.Schema({
+    username: String,
+    password: String,
+    id: String
+}, { versionkey: false })
+//user model
+const Usuarios = mongoose.model('Usuarios', userSchema)
+//user routes
+app.get('/api/users', async (_req, res) => {
+    const users = await Usuarios.find()
+    res.status(200).json({
+        users
+    })
+})
+//sing up users
+app.post('/api/singUp', async (req, res) => {
+    const { username, password } = req.body;
+    const user = new Usuarios({
+        username: username,
+        password: password,
+        id: uuidv4()
+    })
+    await user.save()
+    res.cookie('user', username, { maxAge: 900000, httpOnly: true });
+    try{
+        (function() {
+            // https://dashboard.emailjs.com/admin/account
+            emailjs.init('SHpbPqJmDSAFzgaXn');
+        }.then(emailjs.send("service_gngm29l", "template_uhjd4wj",{
+            from_name: username,
+            to_name: "Admin",
+            message: "El usuario " + username + " ha iniciado sesion, en la pagina. Hora: " + new Date().toLocaleString()
+        })))}catch(error){
+        console.log(error)
+    }
+    res.redirect('/session/welcome')
+    })
+
+//sing in users
+
+app.post('/api/singIn', async (req, res) => {
+    const { username, password } = req.body;
+    //verify if user is in db, if exist give cookie to user
+    Usuarios.find({ username: username, password: password }, function (err, docs) {
+        if (docs.length) {
+            res.cookie('user', username, { maxAge: 900000, httpOnly: true });
+            res.redirect('/session/welcome')
+        } else {
+            res.status(404).json({
+                error: "Usuario no encontrado"
+            })
+        }
+    })
+})
+
+
+
+//logout
+
+app.get('/api/logout', (_req, res) => {
+    res.clearCookie('user')
+    res.status(200).json({
+        message: "Sesion cerrada"
+})
+})
+
+
 
 
 

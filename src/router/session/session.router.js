@@ -1,8 +1,4 @@
 const router = require('express').Router();
-const UserModel = require('../../services/Mongo/models/user.model');
-const md5 = require('md5');
-const authMiddle = require('../../middlewares/auth.middleware');
-const passport = require('passport');
 
 
 
@@ -13,28 +9,33 @@ router.get('/health', (_req, res) => {
     });
 })
 
-router.post('/singUp', passport.authenticate('singUp', {failureRedirect: "/error"}), async (req, res) => {
-    console.log(req.body)
-    res.redirect('/home')
+router.get('/login', (req, res) => {
+    res.render('./pages/login')
 })
 
-router.post('/singIn', passport.authenticate('login', {failureRedirect: "/error"}), async (req, res) => {
-    console.log(req.body)
-    res.redirect('/home')
+router.get('/singUp', (req,res) => {
+    res.render('./pages/singUp')
 })
 
-
-router.get('singOut', (req, res) => {
-    req.logout(()=>{
-        res.redirect('/singIn')
-    })
+router.get('/verify', (req, res) => {
+    if (req.cookies.user) {
+        res.status(200).json({
+            message: "User is logged in",
+            username: req.cookies.user,
+        });
+    } else {
+        res.status(401).json({
+            message: "User is not logged in",
+        });
+    }
 })
 
-router.get('/datos', authMiddle , (req, res) => {
-    res.status(200).json({
-        data: req.session
-    })
+router.get('/welcome', (req, res) => {
+    if (req.cookies.user) {
+        res.render('./pages/welcome', { user: req.cookies.user })
+    } else {
+        res.redirect('/session/login')
+    }
 })
-
 
 module.exports = router;
