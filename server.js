@@ -123,20 +123,15 @@ app.get('/api/productos-test', (_req, res) => {
 })
 
 //post
-app.post('/productos', (req, res) => {
+app.post('/productos', async (req, res) => {
     const { name, price, thumbnail } = req.body;
     const productos = new Productos()
-    const newID = productos.getProductos().length + 1;
     const producto = {
-        id: newID,
-        name,
-        price,
-        thumbnail,
-        quantity: 1,
-        time: Date.now(),
-        desc: "Producto agregado al carrito"
+        name: name,
+        price: price,
+        thumbnail: thumbnail,
     }
-    productos.saveProductos(producto)
+    await productos.saveProductos(producto)
     res.redirect('/productos');
 })
 
