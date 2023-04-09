@@ -14,7 +14,21 @@
 </head>
 
 <body class="position-absolute top-50 start-50 translate-middle">
-    <div>
+    <!-- boostrap alert -->
+    <% if (!user) { %>
+    <div class="alert alert-danger" role="alert">
+        <h4 class="alert-heading">Error!</h4>
+        <p>Debe estar logueado para acceder a esta sección</p>
+        <hr>
+        <p class="mb-0">Por favor, <a href="/session/login"> inicie sesion</a></p>
+    </div>
+    <% } else if(user) {%>
+    <div class="alert alert-success" role="alert">
+        <h4 class="alert-heading">Bienvenido!</h4>
+        <p> <%= user %> </p>
+        <a href="/session/logout">Cerrar sesión</a>
+    </div>
+    <% } %> 
         <form class="d-flex flex-column justify-content-center" action="/productos" method="POST">
             <h2>Ingrese su producto</h2>
             <input type="text" class="form-control" placeholder="nombre" name="name">
@@ -25,28 +39,35 @@
     </div>
     <div class="col">
         <table class="table table-dark table-striped">
-            <% if(productos.length == 0){ %>
+            <% if(productos.length==0){ %>
                 <h1>No hay productos</h1>
-            <% }else{ %>
-                <thead>
-                    <tr>
-                        <th scope="col">Nombre</th>
-                        <th scope="col">Precio</th>
-                        <th scope="col">thumbnail</th>
-                        <th scope="col">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% productos.forEach(i => { %> 
-                    <tr>
-                        <td><a href="/productos/<%=i.id %>"><%=i.name %></a></td>
-                        <td><%=i.price %> </td>
-                        <td><%=i.thumbnail %> </td>
-                        <td><a href="/productos/<%=i.id %>"><button type="button" class="btn btn-danger">Borrar</button></a></td>
-                    </tr>
-                    <% }) %> 
-                </tbody>
-            <% } %> 
+                <% }else{ %>
+                    <thead>
+                        <tr>
+                            <th scope="col">Nombre</th>
+                            <th scope="col">Precio</th>
+                            <th scope="col">thumbnail</th>
+                            <th scope="col">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% productos.forEach(i=> { %>
+                            <tr>
+                                <td><a href="/productos/<%=i.id %>">
+                                        <%=i.name %>
+                                    </a></td>
+                                <td>
+                                    <%=i.price %>
+                                </td>
+                                <td>
+                                    <%=i.thumbnail %>
+                                </td>
+                                <td><a href="/productos/<%=i.id %>"><button type="button"
+                                            class="btn btn-danger">Borrar</button></a></td>
+                            </tr>
+                            <% }) %>
+                    </tbody>
+                    <% } %>
         </table>
     </div>
     <div>

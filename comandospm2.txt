@@ -1,0 +1,7 @@
+pm2 start server.js --name=server1 --watch -- 8080
+pm2 start server.js --name=server2 -i --watch -- 8081
+pm2 start server.js --name=server3 --watch -- 8082
+pm2 start server.js --name=server4 -i --watch -- 8083
+pm2 start server.js --name=server5 --watch -- 8084
+pm2 start server.js --name=server6 -i --watch -- 8085
+
